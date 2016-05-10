@@ -1,0 +1,11 @@
+# Output files
+target/
+
+# Eclipse project files
+.classpath
+.project
+.settings/
+
+# Intellji project files
+*.iml
+.idea/
