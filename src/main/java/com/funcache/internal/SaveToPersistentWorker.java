@@ -1,7 +1,6 @@
 package com.funcache.internal;
 
 import com.funcache.Configuration;
-import com.funcache.storage.PersistentStorage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,12 +14,10 @@ import java.util.concurrent.ExecutionException;
 class SaveToPersistentWorker<K, V> implements Runnable {
 
     private final FunCacheImpl<K, V> funCache;
-    private final PersistentStorage persistentStorage;
     private final Configuration config;
 
     public SaveToPersistentWorker(FunCacheImpl<K, V> funCache) {
         this.funCache = funCache;
-        this.persistentStorage = funCache.getPersistentStorage();
         this.config = funCache.getConfiguration();
     }
 
@@ -44,7 +41,7 @@ class SaveToPersistentWorker<K, V> implements Runnable {
             }
 
             while (true) {
-                if (persistentStorage.saveAll((List<Object>) values)) break;
+                if (funCache.getPersistentStorage().saveAll((List<Object>) values)) break;
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
