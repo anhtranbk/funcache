@@ -3,12 +3,14 @@ package com.funcache.internal;
 import com.funcache.DataWrapper;
 import com.funcache.util.FastLinkedListItem;
 
+import java.io.Serializable;
+
 /**
  * TODO: Class description here.
  *
  * @author <a href="https://github.com/tjeubaoit">tjeubaoit</a>
  */
-class DataWrapperImpl<K, V> implements DataWrapper<K, V>, FastLinkedListItem {
+class DataWrapperImpl<K, V> implements DataWrapper<K, V>, FastLinkedListItem, Serializable {
 
     private volatile long lastActivate;
     private boolean synced;
