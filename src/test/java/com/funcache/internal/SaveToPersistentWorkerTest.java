@@ -35,12 +35,8 @@ public class SaveToPersistentWorkerTest extends TestCase {
                 .build();
         funCache.init(testData);
 
-        DataWrapperImpl<String, String> dw = funCache.getCacheStorage().get("1");
-        dw.setSynced(false);
-
-        dw = funCache.getCacheStorage().get("3");
-        dw.setSynced(false);
-
+        funCache.put("1", "11");
+        funCache.put("3", "23");
         funCache.put("5", "44");
     }
 

@@ -1,7 +1,6 @@
 package com.funcache.internal;
 
 import com.funcache.Configuration;
-import com.funcache.storage.CacheStorage;
 import com.funcache.storage.PersistentStorage;
 
 import java.util.ArrayList;
@@ -17,12 +16,10 @@ class SaveToPersistentWorker<K, V> implements Runnable {
 
     private final FunCacheImpl<K, V> funCache;
     private final PersistentStorage persistentStorage;
-    private final CacheStorage<K, DataWrapperImpl<K, V>> cacheStorage;
     private final Configuration config;
 
     public SaveToPersistentWorker(FunCacheImpl<K, V> funCache) {
         this.funCache = funCache;
-        this.cacheStorage = funCache.getCacheStorage();
         this.persistentStorage = funCache.getPersistentStorage();
         this.config = funCache.getConfiguration();
     }
@@ -32,17 +29,18 @@ class SaveToPersistentWorker<K, V> implements Runnable {
     public void run() {
         final List<DataWrapperImpl<K, V>> forSyncs = new ArrayList<>();
 
-        for (K key : funCache.ketSet()) {
-            DataWrapperImpl<K, V> dw = cacheStorage.get(key);
-            if (dw != null && !dw.isSynced()) {
-                forSyncs.add(dw);
-            }
+        DataWrapperImpl<K, V> dw = funCache.getMostRecentItem();
+        while (dw != null) {
+            if (dw.isSynced()) break;
+            forSyncs.add(dw);
+            dw = dw.getPrevious();
         }
+        if (forSyncs.isEmpty()) return;
 
         if (!config.isCancelSyncIfNotLargerMin() || forSyncs.size() >= config.getMinItemsToSync()) {
             List<V> values = new ArrayList<>(forSyncs.size());
-            for (DataWrapperImpl<K, V> dw : forSyncs) {
-                values.add(dw.getValue());
+            for (DataWrapperImpl<K, V> dwi : forSyncs) {
+                values.add(dwi.getValue());
             }
 
             while (true) {
