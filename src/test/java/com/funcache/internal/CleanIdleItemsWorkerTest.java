@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.funcache.internal.FunCacheImpl.CleanIdleItemsWorker;
+
 /**
  * TODO: Class description here.
  *

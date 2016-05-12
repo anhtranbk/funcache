@@ -9,18 +9,10 @@ public interface DataWrapper<K, V> {
 
     K getKey();
 
-    void setKey(K key);
-
     V getValue();
-
-    void setValue(V value);
 
     long getLastActivate();
 
-    void setLastActivate(long lastActivate);
-
     boolean isSynced();
-
-    void setSynced(boolean synced);
 
 }

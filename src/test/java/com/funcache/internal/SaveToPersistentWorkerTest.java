@@ -9,6 +9,8 @@ import junit.framework.TestCase;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.funcache.internal.FunCacheImpl.SaveToPersistentWorker;
+
 /**
  * TODO: Class description here.
  *

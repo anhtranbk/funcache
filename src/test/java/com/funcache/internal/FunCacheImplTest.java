@@ -30,11 +30,11 @@ public class FunCacheImplTest extends TestCase {
         config.setCancelSyncIfNotLargerMin(true);
         config.setMaxItems(50);
         config.setMaxUnsyncedItems(10);
-        config.setMinEvictableIdleTimeMillis(5);
+        config.setMinEvictableIdleTimeMillis(5000);
         config.setMinItemsToSync(5);
         config.setOverrideUnsyncedItems(true);
         config.setSyncInterval(30);
-        config.setTimeBetweenEvictionRunsMillis(15);
+        config.setTimeBetweenEvictionRunsMillis(15000);
         config.setStorageFactory(new StorageFactory());
 
         funCache = (FunCacheImpl<String, String>) new FunCacheBuilder<String, String>()
@@ -186,6 +186,7 @@ public class FunCacheImplTest extends TestCase {
 
         funCache.put("2", "33");
         funCache.put("5", "99");
+        funCache.put("5", "324");
         funCache.put("12", "22");
 
         assertEquals(3, funCache.getNumberUnsyncedItems());

@@ -4,6 +4,7 @@ import com.funcache.DataWrapper;
 import com.funcache.util.FastLinkedListItem;
 
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * TODO: Class description here.
@@ -12,13 +13,16 @@ import java.io.Serializable;
  */
 class DataWrapperImpl<K, V> implements DataWrapper<K, V>, FastLinkedListItem, Serializable {
 
+    static final int STATE_SYNCED = 0;
+    static final int STATE_UNSYNCED = 1;
+    static final int STATE_SYNCING = 2;
+    private final AtomicInteger syncState = new AtomicInteger();
     private volatile long lastActivate;
-    private boolean synced;
     private K key;
-    private V value;
+    private volatile V value;
 
-    private DataWrapperImpl<K, V> previous;
-    private DataWrapperImpl<K, V> next;
+    private volatile DataWrapperImpl<K, V> previous;
+    private volatile DataWrapperImpl<K, V> next;
 
     public DataWrapperImpl(K key, V value) {
         this(key, value, true);
@@ -28,7 +32,7 @@ class DataWrapperImpl<K, V> implements DataWrapper<K, V>, FastLinkedListItem, Se
         this.key = key;
         this.value = value;
         this.lastActivate = System.currentTimeMillis();
-        this.synced = synced;
+        this.setSynced(synced);
     }
 
     @Override
@@ -53,54 +57,58 @@ class DataWrapperImpl<K, V> implements DataWrapper<K, V>, FastLinkedListItem, Se
         this.next = (DataWrapperImpl<K, V>) next;
     }
 
+    @Override
     public K getKey() {
         return key;
     }
 
-    public void setKey(K key) {
-        this.key = key;
-    }
-
+    @Override
     public long getLastActivate() {
         return lastActivate;
     }
 
-    public void setLastActivate(long lastActivate) {
+    void setLastActivate(long lastActivate) {
         this.lastActivate = lastActivate;
     }
 
+    @Override
     public boolean isSynced() {
-        return synced;
+        return syncState.get() == STATE_SYNCED;
     }
 
-    public void setSynced(boolean synced) {
-        this.synced = synced;
+    void setSynced(boolean synced) {
+        this.syncState.set(synced ? STATE_SYNCED : STATE_UNSYNCED);
     }
 
+    @Override
     public V getValue() {
         return value;
     }
 
-    public void setValue(V value) {
+    void setValue(V value) {
         this.value = value;
+    }
+
+    boolean compareAndSetSyncState(int expected, int update) {
+        return syncState.compareAndSet(expected, update);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof DataWrapperImpl) {
-            return value.equals(((DataWrapperImpl<K, V>) obj).value);
+            return key.equals(((DataWrapperImpl<K, V>) obj).key);
         }
         return super.equals(obj);
     }
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return key.hashCode();
     }
 
     @Override
     public String toString() {
-        return value.toString();
+        return key.toString() + "," + String.valueOf(syncState);
     }
 }

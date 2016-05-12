@@ -25,4 +25,6 @@ public interface FunCache<K, V> extends CacheStorage<K, V>, Configuration {
     void shutdown();
 
     void shutdownAsync();
+
+    boolean isShutdown();
 }
