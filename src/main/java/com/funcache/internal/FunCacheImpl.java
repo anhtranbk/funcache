@@ -491,7 +491,6 @@ private final FastLinkedList fastList = FastLinkedList.Factory.create();
                 }
 
                 for (int i = 0; i < 5; i++) {
-                    Thread.sleep(5000);
                     if (funCache.getPersistentStorage().saveAll((List<Object>) values)) {
                         funCache.submitTask(new Runnable() {
                             @Override
