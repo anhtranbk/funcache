@@ -33,18 +33,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SuppressWarnings("unchecked")
 public class FunCacheImpl<K, V> implements FunCache<K, V> {
 
-    final AtomicInteger numUnsyncedItems = new AtomicInteger(0);
-    final AtomicBoolean syncThreadRunning = new AtomicBoolean(false);
     private final Configuration config;
     private final CacheStorage<K, DataWrapperImpl<K, V>> cacheStorage;
     private final PersistentStorage persistentStorage;
+    private final FastLinkedList fastList = FastLinkedList.Factory.create();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
 //    private Subscription cleanIdleItemsSub;
 //    private Subscription saveToPersistentSub;
-private final FastLinkedList fastList = FastLinkedList.Factory.create();
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
     private final Timer cleanTimer = new Timer();
     private final Timer saveToPersistentTimer = new Timer();
+
+    private final AtomicInteger numUnsyncedItems = new AtomicInteger(0);
+    private final AtomicBoolean syncThreadRunning = new AtomicBoolean(false);
 
 
     public FunCacheImpl(Configuration config) {

@@ -16,6 +16,7 @@ class DataWrapperImpl<K, V> implements DataWrapper<K, V>, FastLinkedListItem, Se
     static final int STATE_SYNCED = 0;
     static final int STATE_UNSYNCED = 1;
     static final int STATE_SYNCING = 2;
+
     private final AtomicInteger syncState = new AtomicInteger();
     private volatile long lastActivate;
     private K key;
