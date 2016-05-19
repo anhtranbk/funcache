@@ -438,15 +438,34 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
             DataWrapperImpl<K, V> dw = funCache.getMostIdleItem();
             while (dw != null) {
                 long idleTime = System.currentTimeMillis() - dw.getLastActivate();
-                if (idleTime < config.getMinEvictableIdleTimeMillis() || !dw.isSynced()) {
-                    break;
-                }
+                if (idleTime < config.getMinEvictableIdleTimeMillis() || !dw.isSynced()) break;
 
+                DataWrapperImpl<K, V> next = dw.getNext();
                 funCache.removeUnsafe(dw.getKey());
-                dw = dw.getNext();
+                dw = next;
                 count++;
             }
             System.out.println("[CLEAN] Size: " + funCache.size() + ", cleaned: " + count);
+
+            if (count == 0) {
+                dw = funCache.getMostIdleItem();
+                int i = 0;
+                StringBuilder sb = new StringBuilder();
+                while (dw != null) {
+                    DataWrapperImpl<K, V> prev = dw.getPrevious();
+                    if (prev != null) {
+                        if (prev.isSynced() ^ dw.isSynced()) {
+                            sb.append(":").append(i);
+                            i = 0;
+                        } else {
+                            i += dw.isSynced() ? 1 : -1;
+                        }
+                    }
+                    dw = dw.getNext();
+                }
+                sb.append(":").append(i);
+                System.out.println(sb.toString());
+            }
         }
     }
 
@@ -464,32 +483,15 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         @Override
         public void run() {
             try {
-                final List<DataWrapperImpl<K, V>> forSyncs = funCache.submitTask(new Callable<List<DataWrapperImpl<K, V>>>() {
-                    @Override
-                    public List<DataWrapperImpl<K, V>> call() throws Exception {
-                        final List<DataWrapperImpl<K, V>> forSyncs = new ArrayList<>();
-                        DataWrapperImpl<K, V> dw = funCache.getMostRecentItem();
-                        while (dw != null) {
-                            if (dw.compareAndSetSyncState(DataWrapperImpl.STATE_UNSYNCED,
-                                    DataWrapperImpl.STATE_SYNCING)) {
-                                forSyncs.add(dw);
-                                dw = dw.getPrevious();
-                                continue;
-                            }
-                            break;
-                        }
-                        return forSyncs;
-                    }
-                }).get();
-
+                final List<DataWrapperImpl<K, V>> forSyncs = getListUnsynedItems();
                 if (config.isCancelSyncIfNotLargerMin() && forSyncs.size() < config.getMinItemsToSync()) {
                     System.out.println("[SYNC] Not enough min item to sync, actual: " + forSyncs.size());
                     return;
                 }
 
-                List<V> values = new ArrayList<>(forSyncs.size());
-                for (DataWrapperImpl<K, V> dwi : forSyncs) {
-                    values.add(dwi.getValue());
+                final List<V> values = new ArrayList<>(forSyncs.size());
+                for (DataWrapperImpl<K, V> dw : forSyncs) {
+                    values.add(dw.getValue());
                 }
 
                 for (int i = 0; i < 5; i++) {
@@ -520,6 +522,21 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                     }
                 });
             }
+        }
+
+        private List<DataWrapperImpl<K, V>> getListUnsynedItems() throws ExecutionException, InterruptedException {
+            return funCache.submitTask(new Callable<List<DataWrapperImpl<K, V>>>() {
+                @Override
+                public List<DataWrapperImpl<K, V>> call() throws Exception {
+                    final List<DataWrapperImpl<K, V>> forSyncs = new ArrayList<>();
+                    for (DataWrapperImpl<K, V> dw = funCache.getMostRecentItem(); dw != null; dw = dw.getPrevious()) {
+                        if (dw.isSynced()) break;
+                        dw.setSyncState(DataWrapperImpl.STATE_SYNCING);
+                        forSyncs.add(dw);
+                    }
+                    return forSyncs;
+                }
+            }).get();
         }
     }
 }
