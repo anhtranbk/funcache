@@ -62,6 +62,9 @@ class FastLinkedListImpl implements FastLinkedList {
             if (next != null) next.setPrevious(prev);
             if (prev != null) prev.setNext(next);
         }
+
+        item.setNext(null);
+        item.setPrevious(null);
     }
 
     @Override
@@ -76,12 +79,11 @@ class FastLinkedListImpl implements FastLinkedList {
 
     @Override
     public void reset() {
-        while (head != null) {
-            FastLinkedListItem item = head;
-            head = item.getNext();
+        for (FastLinkedListItem item = head; item != null; item = item.getNext()) {
             item.setNext(null);
             item.setPrevious(null);
         }
+        head = null;
         tail = null;
     }
 }

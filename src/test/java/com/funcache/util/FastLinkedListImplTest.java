@@ -87,13 +87,16 @@ public class FastLinkedListImplTest extends TestCase {
         list.addToLast(itemA);
         assertEquals(list.head(), itemB);
         assertEquals(list.tail(), itemA);
+        assertNull(itemB.getPrevious());
+        assertNull(itemA.getNext());
 
         list.addToLast(itemC);
         assertEquals(itemD, itemB.getNext());
         assertEquals(itemD.getPrevious(), itemB);
-        assertEquals(list.tail(), itemC);
         assertEquals(itemA.getNext(), itemC);
+        assertEquals(list.tail(), itemC);
         assertEquals(itemC.getPrevious(), itemA);
+        assertNull(itemC.getNext());
     }
 
     public void testRemove() throws Exception {
