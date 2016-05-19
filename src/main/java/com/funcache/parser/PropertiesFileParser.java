@@ -36,7 +36,7 @@ public class PropertiesFileParser implements ConfigurationParser {
             if ((tmp = properties.getProperty(FunCacheOptions.KEY_MIN_EVICTABLE_IDLE_TIME_MILLIS)) != null) {
                 config.setMinEvictableIdleTimeMillis(Long.parseLong(tmp));
             }
-            if ((tmp = properties.getProperty(FunCacheOptions.KEY_TIME_BEETWEEN_EVICTION_RUN_MILLIS)) != null) {
+            if ((tmp = properties.getProperty(FunCacheOptions.KEY_TIME_BETWEEN_EVICTION_RUN_MILLIS)) != null) {
                 config.setTimeBetweenEvictionRunsMillis(Long.parseLong(tmp));
             }
             if ((tmp = properties.getProperty(FunCacheOptions.KEY_MIN_ITEMS_TO_SYNC)) != null) {

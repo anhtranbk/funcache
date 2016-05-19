@@ -15,7 +15,7 @@ public class FunCacheOptions implements Configuration {
 
     public static final String KEY_MAX_ITEMS = "funcache.maxItems";
     public static final String KEY_OVERRIDE_UNSYNCED_ITEMS = "funcache.overrideUnsyncedItems";
-    public static final String KEY_TIME_BEETWEEN_EVICTION_RUN_MILLIS = "funcache.timeBeetweenEvictionRunMillis";
+    public static final String KEY_TIME_BETWEEN_EVICTION_RUN_MILLIS = "funcache.timeBetweenEvictionRunMillis";
     public static final String KEY_MIN_EVICTABLE_IDLE_TIME_MILLIS = "funcache.minEvictableIdleTimeMills";
     public static final String KEY_MAX_UNSYNCED_ITEMS = "funcache.maxUnsyncedItems";
     public static final String KEY_MIN_ITEMS_TO_SYNC = "funcache.minItemsToSync";
@@ -26,7 +26,7 @@ public class FunCacheOptions implements Configuration {
 
     public static final int DEFAULT_MAX_ITEMS = Integer.MAX_VALUE;
     public static final boolean DEFAULT_OVERRIDE_UNSYNCED_ITEMS = true;
-    public static final long DEFAULT_TIME_BEETWEEN_EVICTION_RUN_MILLIS = TimeUnit.DAYS.toSeconds(1);
+    public static final long DEFAULT_TIME_BETWEEN_EVICTION_RUN_MILLIS = TimeUnit.DAYS.toSeconds(1);
     public static final long DEFAULT_MIN_EVICTABLE_IDLE_TIME_MILLIS = TimeUnit.DAYS.toSeconds(5);
     public static final int DEFAULT_MAX_UNSYNCED_ITEMS = DEFAULT_MAX_ITEMS;
     public static final int DEFAULT_MIN_ITEMS_TO_SYNC = 500;
@@ -36,7 +36,7 @@ public class FunCacheOptions implements Configuration {
     private volatile int maxItems = DEFAULT_MAX_ITEMS;
     private volatile boolean overrideUnsyncedItems = DEFAULT_OVERRIDE_UNSYNCED_ITEMS;
 
-    private volatile long timeBetweenEvictionRunsMillis = DEFAULT_TIME_BEETWEEN_EVICTION_RUN_MILLIS;
+    private volatile long timeBetweenEvictionRunsMillis = DEFAULT_TIME_BETWEEN_EVICTION_RUN_MILLIS;
     private volatile long minEvictableIdleTimeMillis = DEFAULT_MIN_EVICTABLE_IDLE_TIME_MILLIS;
 
     private volatile int maxUnsyncedItems = DEFAULT_MAX_UNSYNCED_ITEMS;
