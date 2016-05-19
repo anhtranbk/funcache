@@ -94,6 +94,12 @@ class DataWrapperImpl<K, V> implements DataWrapper<K, V>, FastLinkedListItem, Se
         return syncState.compareAndSet(expected, update);
     }
 
+    void setSyncState(int state) {
+        if (state < STATE_SYNCED && state > STATE_SYNCING)
+            throw new IllegalArgumentException();
+        this.syncState.set(state);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public boolean equals(Object obj) {
