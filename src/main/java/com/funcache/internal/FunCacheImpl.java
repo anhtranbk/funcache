@@ -8,6 +8,8 @@ import com.funcache.storage.PersistentStorage;
 import com.funcache.storage.StorageFactory;
 import com.funcache.storage.ThreadSafeStorage;
 import com.funcache.util.FastLinkedList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,14 +35,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SuppressWarnings("unchecked")
 public class FunCacheImpl<K, V> implements FunCache<K, V> {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(FunCacheImpl.class);
+
     private final Configuration config;
     private final CacheStorage<K, DataWrapperImpl<K, V>> cacheStorage;
     private final PersistentStorage persistentStorage;
     private final FastLinkedList fastList = FastLinkedList.Factory.create();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-//    private Subscription cleanIdleItemsSub;
-//    private Subscription saveToPersistentSub;
+//    private final Subscription cleanIdleItemsSub;
+//    private final Subscription saveToPersistentSub;
 
     private final Timer cleanTimer = new Timer();
     private final Timer saveToPersistentTimer = new Timer();
@@ -74,6 +78,18 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
 //                numUnsyncedItems.set(0);
 //            }
 //        });
+
+        LOGGER.info("New funcache instance has been created with configuration:");
+        LOGGER.info("maxItems=" + config.getMaxItems());
+        LOGGER.info("overrideUnsyncedItems=" + config.isOverrideUnsyncedItems());
+        LOGGER.info("timeBetweenEvictionRunMillis=" + config.getTimeBetweenEvictionRunsMillis());
+        LOGGER.info("minEvictableIdleTimeMills=" + config.getMinEvictableIdleTimeMillis());
+        LOGGER.info("maxUnsyncedItems=" + config.getMaxUnsyncedItems());
+        LOGGER.info("minItemsToSync=" + config.getMinItemsToSync());
+        LOGGER.info("cancelSyncIfNotLargerMin=" + config.isCancelSyncIfNotLargerMin());
+        LOGGER.info("syncInterval=" + config.getSyncInterval());
+        LOGGER.info("putWhenExceededMaxSizeBehavior=" + config.getPutWhenExceededMaxSizeBehavior());
+        LOGGER.info("storageFactory=" + config.getStorageFactory().getClass().getName());
     }
 
     /**
@@ -130,7 +146,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         try {
             executor.awaitTermination(60, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOGGER.warn(e.getMessage(), e);
         }
     }
 
@@ -141,7 +157,6 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
 
         cleanTimer.cancel();
         saveToPersistentTimer.cancel();
-
         executor.shutdown();
     }
 
@@ -181,11 +196,10 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         try {
             putAsync(key, value).get();
         } catch (ExecutionException e) {
-            if (e.getCause() instanceof LimitExceededException) {
+            if (e.getCause() instanceof LimitExceededException)
                 throw (LimitExceededException) e.getCause();
-            }
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOGGER.warn(e.getMessage(), e);
         }
     }
 
@@ -194,7 +208,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         try {
             return removeAsync(key).get();
         } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+            LOGGER.warn(e.getMessage(), e);
         }
         return null;
     }
@@ -218,7 +232,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         try {
             clearAsync().get();
         } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+            LOGGER.warn(e.getMessage(), e);
         }
     }
 
@@ -445,7 +459,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                 dw = next;
                 count++;
             }
-            System.out.println("[CLEAN] Size: " + funCache.size() + ", cleaned: " + count);
+            LOGGER.info("[CLEAN] Size: " + funCache.size() + ", cleaned: " + count);
 
             if (count == 0) {
                 dw = funCache.getMostIdleItem();
@@ -485,7 +499,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
             try {
                 final List<DataWrapperImpl<K, V>> forSyncs = getListUnsynedItems();
                 if (config.isCancelSyncIfNotLargerMin() && forSyncs.size() < config.getMinItemsToSync()) {
-                    System.out.println("[SYNC] Not enough min item to sync, actual: " + forSyncs.size());
+                    LOGGER.info("[SYNC] Not enough min item to sync, actual: " + forSyncs.size());
                     return;
                 }
 
@@ -505,7 +519,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                                         funCache.numUnsyncedItems.decrementAndGet();
                                     }
                                 }
-                                System.out.println("[SYNC] Synced: " + forSyncs.size() + ", current unsynced: "
+                                LOGGER.info("[SYNC] Synced: " + forSyncs.size() + ", current unsynced: "
                                         + funCache.getNumberUnsyncedItems());
                             }
                         }).get();
@@ -513,7 +527,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                     }
                 }
             } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+                LOGGER.warn(e.getMessage(), e);
             } finally {
                 funCache.submitTask(new Runnable() {
                     @Override
