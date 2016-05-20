@@ -9,6 +9,10 @@ import com.funcache.storage.ThreadSafeStorage;
 import com.funcache.util.FastLinkedList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rx.Observable;
+import rx.exceptions.OnErrorThrowable;
+import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,7 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -42,14 +45,11 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
     private final FastLinkedList fastList = FastLinkedList.Factory.create();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-//    private final Subscription cleanIdleItemsSub;
-//    private final Subscription saveToPersistentSub;
-
     private final Timer cleanTimer = new Timer();
     private final Timer saveToPersistentTimer = new Timer();
 
     private final AtomicInteger numUnsyncedItems = new AtomicInteger(0);
-    private final AtomicBoolean syncThreadRunning = new AtomicBoolean(false);
+    private final AtomicInteger numSyncWorkersRunning = new AtomicInteger(0);
 
 
     public FunCacheImpl(Configuration config) {
@@ -62,22 +62,6 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         startCleanTimer();
         startSaveToPersistentTimer();
 
-//        Observable<Long> o1 = Observable.interval(config.getTimeBetweenEvictionRunsMillis(), TimeUnit.MILLISECONDS);
-//        cleanIdleItemsSub = o1.subscribeOn(Schedulers.newThread()).skip(1).subscribe(new Action1<Long>() {
-//            @Override
-//            public void call(Long aLong) {
-//                executor.submit(new CleanIdleItemsWorker<>(FunCacheImpl.this));
-//            }
-//        });
-//        Observable<Long> o2 = Observable.interval(config.getSyncInterval(), TimeUnit.SECONDS);
-//        saveToPersistentSub = o2.subscribeOn(Schedulers.newThread()).subscribe(new Action1<Long>() {
-//            @Override
-//            public void call(Long aLong) {
-//                new SaveToPersistentWorker<>(FunCacheImpl.this).run();
-//                numUnsyncedItems.set(0);
-//            }
-//        });
-
         LOGGER.info("New funcache instance has been created with configuration:");
         LOGGER.info("maxItems=" + config.getMaxItems());
         LOGGER.info("overrideUnsyncedItems=" + config.isOverrideUnsyncedItems());
@@ -86,8 +70,9 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         LOGGER.info("maxUnsyncedItems=" + config.getMaxUnsyncedItems());
         LOGGER.info("minItemsToSync=" + config.getMinItemsToSync());
         LOGGER.info("cancelSyncIfNotLargerMin=" + config.isCancelSyncIfNotLargerMin());
-        LOGGER.info("allowMultiSyncRunParallel=" + config.isAllowMultiSyncRunParallel());
-        LOGGER.info("numberTryWhenSyncFailed=" + config.getNumberTryWhenSyncFailed());
+        LOGGER.info("allowMultiSync=" + config.isAllowMultiSync());
+        LOGGER.info("maxRetrySyncIfFailed=" + config.getMaxRetrySyncIfFailed());
+        LOGGER.info("maxSyncConcurrency=" + config.getMaxSyncConcurrency());
         LOGGER.info("syncInterval=" + config.getSyncInterval());
         LOGGER.info("putWhenExceededMaxSizeBehavior=" + config.getPutWhenExceededMaxSizeBehavior());
         LOGGER.info("storageFactory=" + config.getStorageFactory().getClass().getName());
@@ -153,9 +138,6 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
 
     @Override
     public void shutdownAsync() {
-//        cleanIdleItemsSub.unsubscribe();
-//        saveToPersistentSub.unsubscribe();
-
         cleanTimer.cancel();
         saveToPersistentTimer.cancel();
         executor.shutdown();
@@ -265,10 +247,12 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         return executor.submit(runnable);
     }
 
-    void saveToPersistentStorage() {
-        if (!syncThreadRunning.get()) {
-            syncThreadRunning.set(true);
-            Executors.newCachedThreadPool().submit(new SaveToPersistentWorker<>(FunCacheImpl.this));
+    void startSyncToPersistentWorker() {
+        if ((numSyncWorkersRunning.get() < config.getMaxSyncConcurrency() && config.isAllowMultiSync())
+                || numSyncWorkersRunning.get() == 0) {
+            numSyncWorkersRunning.incrementAndGet();
+            executor.submit(new SaveToPersistentWorker<>(this));
+            LOGGER.info("Start new sync worker, current sync running: " + numSyncWorkersRunning.get());
         }
     }
 
@@ -285,7 +269,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         saveToPersistentTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                saveToPersistentStorage();
+                startSyncToPersistentWorker();
             }
         }, config.getSyncInterval() * 1000, config.getSyncInterval() * 1000);
     }
@@ -317,8 +301,8 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
             numUnsyncedItems.incrementAndGet();
         }
 
-        if (numUnsyncedItems.get() >= config.getMaxUnsyncedItems()) {
-            saveToPersistentStorage();
+        if (numUnsyncedItems.get() >= config.getMaxUnsyncedItems() && numSyncWorkersRunning.get() == 0) {
+            startSyncToPersistentWorker();
         }
         return value;
     }
@@ -373,61 +357,65 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         @SuppressWarnings("unchecked")
         @Override
         public void run() {
-            try {
-                final List<DataWrapperImpl<K, V>> forSyncs = getListUnsynedItems();
-                if (config.isCancelSyncIfNotLargerMin() && forSyncs.size() < config.getMinItemsToSync()) {
-                    LOGGER.info("[SYNC] Not enough items to sync, actual: " + forSyncs.size());
-                    return;
-                }
-
-                final List<V> values = new ArrayList<>(forSyncs.size());
-                for (DataWrapperImpl<K, V> dw : forSyncs) {
-                    values.add(dw.getValue());
-                }
-
-                for (int i = 0; i < config.getNumberTryWhenSyncFailed(); i++) {
-                    if (funCache.getPersistentStorage().saveAll((List<Object>) values)) {
-                        funCache.submitTask(new Runnable() {
-                            @Override
-                            public void run() {
-                                for (DataWrapperImpl<K, V> dw : forSyncs) {
-                                    if (dw.compareAndSetSyncState(DataWrapperImpl.STATE_SYNCING,
-                                            DataWrapperImpl.STATE_SYNCED)) {
-                                        funCache.numUnsyncedItems.decrementAndGet();
-                                    }
-                                }
-                                LOGGER.info("[SYNC] Synced: " + forSyncs.size() + ", current unsynced: "
-                                        + funCache.getNumberUnsyncedItems());
-                            }
-                        }).get();
-                        break;
-                    }
-                }
-            } catch (InterruptedException | ExecutionException e) {
-                LOGGER.warn(e.getMessage(), e);
-            } finally {
-                funCache.submitTask(new Runnable() {
-                    @Override
-                    public void run() {
-                        funCache.syncThreadRunning.set(false);
-                    }
-                });
+            final List<DataWrapperImpl<K, V>> forSyncs = getListUnsynedItems();
+            if (config.isCancelSyncIfNotLargerMin() && forSyncs.size() < config.getMinItemsToSync()) {
+                LOGGER.info("[SYNC] Not enough items to sync, actual: " + forSyncs.size());
+                funCache.numSyncWorkersRunning.decrementAndGet();
+                return;
             }
+
+            Observable.fromCallable(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    final List<V> values = new ArrayList<>(forSyncs.size());
+                    for (DataWrapperImpl<K, V> dw : forSyncs) {
+                        values.add(dw.getValue());
+                    }
+                    for (int i = 0; i < config.getMaxRetrySyncIfFailed(); i++) {
+                        if (funCache.getPersistentStorage().saveAll((List<Object>) values)) return true;
+                    }
+                    throw OnErrorThrowable.from(new RuntimeException());
+                }
+            }).observeOn(Schedulers.io()).subscribeOn(Schedulers.computation()).subscribe(new Action1<Boolean>() {
+                @Override
+                public void call(final Boolean success) {
+                    funCache.submitTask(new Runnable() {
+                        @Override
+                        public void run() {
+                            for (DataWrapperImpl<K, V> dw : forSyncs) {
+                                if (dw.compareAndSetSyncState(DataWrapperImpl.STATE_SYNCING,
+                                        DataWrapperImpl.STATE_SYNCED)) {
+                                    funCache.numUnsyncedItems.decrementAndGet();
+                                }
+                            }
+                            funCache.numSyncWorkersRunning.decrementAndGet();
+                            LOGGER.info("[SYNC] Synced: " + forSyncs.size() + ", current unsynced: "
+                                    + funCache.getNumberUnsyncedItems());
+                        }
+                    });
+                }
+            }, new Action1<Throwable>() {
+                @Override
+                public void call(Throwable throwable) {
+                    for (DataWrapperImpl<K, V> dw : forSyncs) {
+                        dw.compareAndSetSyncState(DataWrapperImpl.STATE_SYNCING,
+                                DataWrapperImpl.STATE_UNSYNCED);
+                    }
+                    funCache.numSyncWorkersRunning.decrementAndGet();
+                }
+            });
         }
 
-        private List<DataWrapperImpl<K, V>> getListUnsynedItems() throws ExecutionException, InterruptedException {
-            return funCache.submitTask(new Callable<List<DataWrapperImpl<K, V>>>() {
-                @Override
-                public List<DataWrapperImpl<K, V>> call() throws Exception {
-                    final List<DataWrapperImpl<K, V>> forSyncs = new ArrayList<>();
-                    for (DataWrapperImpl<K, V> dw = funCache.getMostRecentItem(); dw != null; dw = dw.getPrevious()) {
-                        if (dw.isSynced()) break;
-                        dw.setSyncState(DataWrapperImpl.STATE_SYNCING);
-                        forSyncs.add(dw);
-                    }
-                    return forSyncs;
+        private List<DataWrapperImpl<K, V>> getListUnsynedItems() {
+            final List<DataWrapperImpl<K, V>> forSyncs = new ArrayList<>();
+            for (DataWrapperImpl<K, V> dw = funCache.getMostRecentItem(); dw != null; dw = dw.getPrevious()) {
+                if (dw.compareAndSetSyncState(DataWrapperImpl.STATE_UNSYNCED, DataWrapperImpl.STATE_SYNCING)) {
+                    forSyncs.add(dw);
+                    continue;
                 }
-            }).get();
+                break;
+            }
+            return forSyncs;
         }
     }
 }
