@@ -10,7 +10,7 @@ import java.util.concurrent.Future;
  *
  * @author <a href="https://github.com/tjeubaoit">tjeubaoit</a>
  */
-public interface FunCache<K, V> extends CacheStorage<K, V>, Configuration {
+public interface FunCache<K, V> extends CacheStorage<K, V> {
 
     Configuration getConfiguration();
 

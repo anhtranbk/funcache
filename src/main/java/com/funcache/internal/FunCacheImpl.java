@@ -5,7 +5,6 @@ import com.funcache.FunCache;
 import com.funcache.exception.LimitExceededException;
 import com.funcache.storage.CacheStorage;
 import com.funcache.storage.PersistentStorage;
-import com.funcache.storage.StorageFactory;
 import com.funcache.storage.ThreadSafeStorage;
 import com.funcache.util.FastLinkedList;
 import org.slf4j.Logger;
@@ -236,110 +235,6 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         }
     }
 
-    @Override
-    public int getMaxItems() {
-        return config.getMaxItems();
-    }
-
-    @Override
-    public void setMaxItems(int maxItems) {
-        config.setMaxItems(maxItems);
-    }
-
-    @Override
-    public boolean isOverrideUnsyncedItems() {
-        return config.isOverrideUnsyncedItems();
-    }
-
-    @Override
-    public void setOverrideUnsyncedItems(boolean overrideUnsyncedItems) {
-        config.setOverrideUnsyncedItems(overrideUnsyncedItems);
-    }
-
-    @Override
-    public long getTimeBetweenEvictionRunsMillis() {
-        return config.getTimeBetweenEvictionRunsMillis();
-    }
-
-    @Override
-    public void setTimeBetweenEvictionRunsMillis(long timeBetweenEvictionRunsMillis) {
-        config.setTimeBetweenEvictionRunsMillis(timeBetweenEvictionRunsMillis);
-        cleanTimer.cancel();
-        startCleanTimer();
-    }
-
-    @Override
-    public long getMinEvictableIdleTimeMillis() {
-        return config.getMinEvictableIdleTimeMillis();
-    }
-
-    @Override
-    public void setMinEvictableIdleTimeMillis(long minEvictableIdleTimeMillis) {
-        config.setMinEvictableIdleTimeMillis(minEvictableIdleTimeMillis);
-    }
-
-    @Override
-    public int getMaxUnsyncedItems() {
-        return config.getMaxUnsyncedItems();
-    }
-
-    @Override
-    public void setMaxUnsyncedItems(int maxUnsyncedItems) {
-        config.setMaxUnsyncedItems(maxUnsyncedItems);
-    }
-
-    @Override
-    public int getMinItemsToSync() {
-        return config.getMinItemsToSync();
-    }
-
-    @Override
-    public void setMinItemsToSync(int minItemsToSync) {
-        config.setMinItemsToSync(minItemsToSync);
-    }
-
-    @Override
-    public boolean isCancelSyncIfNotLargerMin() {
-        return config.isCancelSyncIfNotLargerMin();
-    }
-
-    @Override
-    public void setCancelSyncIfNotLargerMin(boolean cancelSyncIfNotLargerMin) {
-        config.setCancelSyncIfNotLargerMin(cancelSyncIfNotLargerMin);
-    }
-
-    @Override
-    public long getSyncInterval() {
-        return config.getSyncInterval();
-    }
-
-    @Override
-    public void setSyncInterval(long syncInterval) {
-        config.setSyncInterval(syncInterval);
-        saveToPersistentTimer.cancel();
-        startSaveToPersistentTimer();
-    }
-
-    @Override
-    public String getPutWhenExceededMaxSizeBehavior() {
-        return config.getPutWhenExceededMaxSizeBehavior();
-    }
-
-    @Override
-    public void setPutWhenExceededMaxSizeBehavior(String putToFulledPoolBehavior) {
-        config.setPutWhenExceededMaxSizeBehavior(putToFulledPoolBehavior);
-    }
-
-    @Override
-    public StorageFactory getStorageFactory() {
-        return config.getStorageFactory();
-    }
-
-    @Override
-    public void setStorageFactory(StorageFactory storageFactory) {
-        throw new UnsupportedOperationException();
-    }
-
     public int getNumberUnsyncedItems() {
         return numUnsyncedItems.get();
     }
@@ -460,26 +355,6 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                 count++;
             }
             LOGGER.info("[CLEAN] Size: " + funCache.size() + ", cleaned: " + count);
-
-            if (count == 0) {
-                dw = funCache.getMostIdleItem();
-                int i = 0;
-                StringBuilder sb = new StringBuilder();
-                while (dw != null) {
-                    DataWrapperImpl<K, V> prev = dw.getPrevious();
-                    if (prev != null) {
-                        if (prev.isSynced() ^ dw.isSynced()) {
-                            sb.append(":").append(i);
-                            i = 0;
-                        } else {
-                            i += dw.isSynced() ? 1 : -1;
-                        }
-                    }
-                    dw = dw.getNext();
-                }
-                sb.append(":").append(i);
-                System.out.println(sb.toString());
-            }
         }
     }
 
@@ -499,7 +374,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
             try {
                 final List<DataWrapperImpl<K, V>> forSyncs = getListUnsynedItems();
                 if (config.isCancelSyncIfNotLargerMin() && forSyncs.size() < config.getMinItemsToSync()) {
-                    LOGGER.info("[SYNC] Not enough min item to sync, actual: " + forSyncs.size());
+                    LOGGER.info("[SYNC] Not enough items to sync, actual: " + forSyncs.size());
                     return;
                 }
 
