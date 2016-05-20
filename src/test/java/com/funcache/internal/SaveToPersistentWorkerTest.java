@@ -49,8 +49,8 @@ public class SaveToPersistentWorkerTest extends TestCase {
     }
 
     public void testRun_001() throws Exception {
-        funCache.setMinItemsToSync(5);
-        funCache.setCancelSyncIfNotLargerMin(false);
+        funCache.getConfiguration().setMinItemsToSync(5);
+        funCache.getConfiguration().setCancelSyncIfNotLargerMin(false);
 
         SaveToPersistentWorker<String, String> saveToPersistentWorker = new SaveToPersistentWorker<>(funCache);
         saveToPersistentWorker.run();
@@ -61,8 +61,8 @@ public class SaveToPersistentWorkerTest extends TestCase {
     }
 
     public void testRun_002() throws Exception {
-        funCache.setMinItemsToSync(5);
-        funCache.setCancelSyncIfNotLargerMin(true);
+        funCache.getConfiguration().setMinItemsToSync(5);
+        funCache.getConfiguration().setCancelSyncIfNotLargerMin(true);
 
         SaveToPersistentWorker<String, String> saveToPersistentWorker = new SaveToPersistentWorker<>(funCache);
         saveToPersistentWorker.run();
@@ -73,8 +73,8 @@ public class SaveToPersistentWorkerTest extends TestCase {
     }
 
     public void testRun_003() throws Exception {
-        funCache.setMinItemsToSync(2);
-        funCache.setCancelSyncIfNotLargerMin(true);
+        funCache.getConfiguration().setMinItemsToSync(2);
+        funCache.getConfiguration().setCancelSyncIfNotLargerMin(true);
 
         SaveToPersistentWorker<String, String> saveToPersistentWorker = new SaveToPersistentWorker<>(funCache);
         saveToPersistentWorker.run();

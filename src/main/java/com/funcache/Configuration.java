@@ -40,13 +40,21 @@ public interface Configuration {
 
     void setCancelSyncIfNotLargerMin(boolean cancelSyncIfNotLargerMin);
 
+    boolean isAllowMultiSyncRunParallel();
+
+    void setAllowMultiSyncRunParallel(boolean allowMultiSyncRunParallel);
+
+    int getNumberTryWhenSyncFailed();
+
+    void setNumberTryWhenSyncFailed(int numberTryWhenSyncFailed);
+
     long getSyncInterval();
 
     void setSyncInterval(long syncInterval);
 
     String getPutWhenExceededMaxSizeBehavior();
 
-    void setPutWhenExceededMaxSizeBehavior(String putToFulledPoolBehavior);
+    void setPutWhenExceededMaxSizeBehavior(String putWhenExceededMaxSizeBehavior);
 
     StorageFactory getStorageFactory();
 

@@ -126,8 +126,8 @@ public class FunCacheImplTest extends TestCase {
     }
 
     public void testPut_whenExceededMaxSizeBehavior_keepRecent() throws Exception {
-        funCache.setPutWhenExceededMaxSizeBehavior(Configuration.KEEP_RECENT);
-        funCache.setMaxItems(testData.size());
+        funCache.getConfiguration().setPutWhenExceededMaxSizeBehavior(Configuration.KEEP_RECENT);
+        funCache.getConfiguration().setMaxItems(testData.size());
         funCache.init(testData);
 
         funCache.put("11", "110");
@@ -139,8 +139,8 @@ public class FunCacheImplTest extends TestCase {
 
     public void testPut_whenExceededMaxSizeBehavior_refuse() throws Exception {
         try {
-            funCache.setPutWhenExceededMaxSizeBehavior(Configuration.REFUSE);
-            funCache.setMaxItems(testData.size());
+            funCache.getConfiguration().setPutWhenExceededMaxSizeBehavior(Configuration.REFUSE);
+            funCache.getConfiguration().setMaxItems(testData.size());
             funCache.init(testData);
 
             funCache.put("11", "110");

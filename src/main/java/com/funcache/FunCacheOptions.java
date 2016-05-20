@@ -20,6 +20,8 @@ public class FunCacheOptions implements Configuration {
     public static final String KEY_MAX_UNSYNCED_ITEMS = "funcache.maxUnsyncedItems";
     public static final String KEY_MIN_ITEMS_TO_SYNC = "funcache.minItemsToSync";
     public static final String KEY_CANCEL_SYNC_IF_NOT_LARGER_MIN = "funcache.cancelSyncIfNotLargerMin";
+    public static final String KEY_ALLOW_MULTI_SYNC_RUN_PARALLEL = "funcache.allowMultiSyncRunParallel";
+    public static final String KEY_NUMBER_TRY_WHEN_SYNC_FAILED = "funcache.numberTryWhenSyncFailed";
     public static final String KEY_SYNC_INTERVAL = "funcache.syncInterval";
     public static final String KEY_PUT_WHEN_EXCEEDED_MAX_SIZE_BEHAVIOR = "funcache.putWhenExceededMaxSizeBehavior";
     public static final String KEY_STORAGE_FACTORY = "funcache.storageFactory";
@@ -32,6 +34,8 @@ public class FunCacheOptions implements Configuration {
     public static final int DEFAULT_MIN_ITEMS_TO_SYNC = 500;
     public static final boolean DEFAULT_CANCEL_SYNC_IF_NOT_LARGER_MIN = true;
     public static final long DEFAULT_SYNC_INTERVAL = TimeUnit.MINUTES.toSeconds(10);
+    public static final boolean DEFAULT_ALLOW_MULTI_SYNC_RUN_PARALLEL = false;
+    public static final int DEFAULT_NUMBER_TRY_WHEN_SYNC_FAILED = 5;
 
     private volatile int maxItems = DEFAULT_MAX_ITEMS;
     private volatile boolean overrideUnsyncedItems = DEFAULT_OVERRIDE_UNSYNCED_ITEMS;
@@ -42,6 +46,8 @@ public class FunCacheOptions implements Configuration {
     private volatile int maxUnsyncedItems = DEFAULT_MAX_UNSYNCED_ITEMS;
     private volatile int minItemsToSync = DEFAULT_MIN_ITEMS_TO_SYNC;
     private volatile boolean cancelSyncIfNotLargerMin = DEFAULT_CANCEL_SYNC_IF_NOT_LARGER_MIN;
+    private volatile boolean allowMultiSyncRunParallel = DEFAULT_ALLOW_MULTI_SYNC_RUN_PARALLEL;
+    private volatile int numberTryWhenSyncFailed = DEFAULT_NUMBER_TRY_WHEN_SYNC_FAILED;
     private volatile long syncInterval = DEFAULT_SYNC_INTERVAL;
 
     private String putWhenExceededMaxSizeBehavior = KEEP_RECENT;
@@ -102,6 +108,27 @@ public class FunCacheOptions implements Configuration {
 
     public void setCancelSyncIfNotLargerMin(boolean cancelSyncIfNotLargerMin) {
         this.cancelSyncIfNotLargerMin = cancelSyncIfNotLargerMin;
+    }
+
+    @Override
+    public boolean isAllowMultiSyncRunParallel() {
+        return allowMultiSyncRunParallel;
+    }
+
+    @Override
+    public void setAllowMultiSyncRunParallel(boolean allowMultiSyncRunParallel) {
+        this.allowMultiSyncRunParallel = allowMultiSyncRunParallel;
+    }
+
+    @Override
+    public int getNumberTryWhenSyncFailed() {
+        return numberTryWhenSyncFailed;
+    }
+
+    @Override
+    public void setNumberTryWhenSyncFailed(int numberTryWhenSyncFailed) {
+        if (numberTryWhenSyncFailed == 0) numberTryWhenSyncFailed = 1;
+        this.numberTryWhenSyncFailed = numberTryWhenSyncFailed;
     }
 
     public long getSyncInterval() {

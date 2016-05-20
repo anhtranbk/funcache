@@ -86,6 +86,8 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         LOGGER.info("maxUnsyncedItems=" + config.getMaxUnsyncedItems());
         LOGGER.info("minItemsToSync=" + config.getMinItemsToSync());
         LOGGER.info("cancelSyncIfNotLargerMin=" + config.isCancelSyncIfNotLargerMin());
+        LOGGER.info("allowMultiSyncRunParallel=" + config.isAllowMultiSyncRunParallel());
+        LOGGER.info("numberTryWhenSyncFailed=" + config.getNumberTryWhenSyncFailed());
         LOGGER.info("syncInterval=" + config.getSyncInterval());
         LOGGER.info("putWhenExceededMaxSizeBehavior=" + config.getPutWhenExceededMaxSizeBehavior());
         LOGGER.info("storageFactory=" + config.getStorageFactory().getClass().getName());
@@ -383,7 +385,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                     values.add(dw.getValue());
                 }
 
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < config.getNumberTryWhenSyncFailed(); i++) {
                     if (funCache.getPersistentStorage().saveAll((List<Object>) values)) {
                         funCache.submitTask(new Runnable() {
                             @Override
