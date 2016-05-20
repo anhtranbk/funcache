@@ -59,8 +59,8 @@ public class PropertiesFileParser implements ConfigurationParser {
                 StorageFactory factory = (StorageFactory) getClass().getClassLoader().loadClass(tmp).newInstance();
                 config.setStorageFactory(factory);
             }
-            if ((tmp = properties.getProperty(FunCacheOptions.KEY_ALLOW_MULTI_SYNC_RUN_PARALLEL)) != null) {
-                config.setAllowMultiSyncRunParallel(Boolean.parseBoolean(tmp));
+            if ((tmp = properties.getProperty(FunCacheOptions.KEY_ALLOW_MULTI_SYNC)) != null) {
+                config.setAllowMultiSync(Boolean.parseBoolean(tmp));
             }
             if ((tmp = properties.getProperty(FunCacheOptions.KEY_MAX_RETRY_SYNC_IF_FAILED)) != null) {
                 config.setMaxRetrySyncIfFailed(Integer.parseInt(tmp));

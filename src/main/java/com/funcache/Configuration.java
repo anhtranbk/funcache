@@ -40,9 +40,9 @@ public interface Configuration {
 
     void setCancelSyncIfNotLargerMin(boolean cancelSyncIfNotLargerMin);
 
-    boolean isAllowMultiSyncRunParallel();
+    boolean isAllowMultiSync();
 
-    void setAllowMultiSyncRunParallel(boolean allowMultiSyncRunParallel);
+    void setAllowMultiSync(boolean allowMultiSync);
 
     int getMaxRetrySyncIfFailed();
 
