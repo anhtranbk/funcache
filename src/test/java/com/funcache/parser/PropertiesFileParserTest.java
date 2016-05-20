@@ -38,7 +38,8 @@ public class PropertiesFileParserTest extends TestCase {
         assertEquals(600, config.getSyncInterval());
         assertEquals(Configuration.KEEP_RECENT, config.getPutWhenExceededMaxSizeBehavior());
         assertEquals(true, config.isAllowMultiSyncRunParallel());
-        assertEquals(10, config.getNumberTryWhenSyncFailed());
+        assertEquals(10, config.getMaxRetrySyncIfFailed());
+        assertEquals(20, config.getMaxSyncConcurrency());
 
         assertTrue(config.getStorageFactory().createCacheStorage() instanceof HashMapCacheStorage);
     }

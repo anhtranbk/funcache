@@ -21,7 +21,8 @@ public class FunCacheOptions implements Configuration {
     public static final String KEY_MIN_ITEMS_TO_SYNC = "funcache.minItemsToSync";
     public static final String KEY_CANCEL_SYNC_IF_NOT_LARGER_MIN = "funcache.cancelSyncIfNotLargerMin";
     public static final String KEY_ALLOW_MULTI_SYNC_RUN_PARALLEL = "funcache.allowMultiSyncRunParallel";
-    public static final String KEY_NUMBER_TRY_WHEN_SYNC_FAILED = "funcache.numberTryWhenSyncFailed";
+    public static final String KEY_MAX_RETRY_SYNC_IF_FAILED = "funcache.maxRetrySyncIfFailed";
+    public static final String KEY_MAX_SYNC_CONCURRENCY = "funcache.maxSyncConcurrency";
     public static final String KEY_SYNC_INTERVAL = "funcache.syncInterval";
     public static final String KEY_PUT_WHEN_EXCEEDED_MAX_SIZE_BEHAVIOR = "funcache.putWhenExceededMaxSizeBehavior";
     public static final String KEY_STORAGE_FACTORY = "funcache.storageFactory";
@@ -35,7 +36,8 @@ public class FunCacheOptions implements Configuration {
     public static final boolean DEFAULT_CANCEL_SYNC_IF_NOT_LARGER_MIN = true;
     public static final long DEFAULT_SYNC_INTERVAL = TimeUnit.MINUTES.toSeconds(10);
     public static final boolean DEFAULT_ALLOW_MULTI_SYNC_RUN_PARALLEL = false;
-    public static final int DEFAULT_NUMBER_TRY_WHEN_SYNC_FAILED = 5;
+    public static final int DEFAULT_MAX_RETRY_SYNC_IF_FAILED = 5;
+    private static final int DEFAULT_MAX_SYNC_CONCURRENCY = 5;
 
     private volatile int maxItems = DEFAULT_MAX_ITEMS;
     private volatile boolean overrideUnsyncedItems = DEFAULT_OVERRIDE_UNSYNCED_ITEMS;
@@ -47,7 +49,8 @@ public class FunCacheOptions implements Configuration {
     private volatile int minItemsToSync = DEFAULT_MIN_ITEMS_TO_SYNC;
     private volatile boolean cancelSyncIfNotLargerMin = DEFAULT_CANCEL_SYNC_IF_NOT_LARGER_MIN;
     private volatile boolean allowMultiSyncRunParallel = DEFAULT_ALLOW_MULTI_SYNC_RUN_PARALLEL;
-    private volatile int numberTryWhenSyncFailed = DEFAULT_NUMBER_TRY_WHEN_SYNC_FAILED;
+    private volatile int maxRetrySyncIfFailed = DEFAULT_MAX_RETRY_SYNC_IF_FAILED;
+    private volatile int maxSyncConcurrency = DEFAULT_MAX_SYNC_CONCURRENCY;
     private volatile long syncInterval = DEFAULT_SYNC_INTERVAL;
 
     private String putWhenExceededMaxSizeBehavior = KEEP_RECENT;
@@ -91,6 +94,7 @@ public class FunCacheOptions implements Configuration {
     }
 
     public void setMaxUnsyncedItems(int maxUnsyncedItems) {
+        if (maxUnsyncedItems < minItemsToSync) maxUnsyncedItems = minItemsToSync;
         this.maxUnsyncedItems = maxUnsyncedItems;
     }
 
@@ -99,6 +103,7 @@ public class FunCacheOptions implements Configuration {
     }
 
     public void setMinItemsToSync(int minItemsToSync) {
+        if (minItemsToSync > maxUnsyncedItems) minItemsToSync = maxUnsyncedItems - 1;
         this.minItemsToSync = minItemsToSync;
     }
 
@@ -121,14 +126,25 @@ public class FunCacheOptions implements Configuration {
     }
 
     @Override
-    public int getNumberTryWhenSyncFailed() {
-        return numberTryWhenSyncFailed;
+    public int getMaxRetrySyncIfFailed() {
+        return maxRetrySyncIfFailed;
     }
 
     @Override
-    public void setNumberTryWhenSyncFailed(int numberTryWhenSyncFailed) {
-        if (numberTryWhenSyncFailed == 0) numberTryWhenSyncFailed = 1;
-        this.numberTryWhenSyncFailed = numberTryWhenSyncFailed;
+    public void setMaxRetrySyncIfFailed(int maxRetrySyncIfFailed) {
+        if (maxRetrySyncIfFailed == 0) maxRetrySyncIfFailed = 1;
+        this.maxRetrySyncIfFailed = maxRetrySyncIfFailed;
+    }
+
+    @Override
+    public int getMaxSyncConcurrency() {
+        return maxSyncConcurrency;
+    }
+
+    @Override
+    public void setMaxSyncConcurrency(int maxSyncConcurrency) {
+        if (maxSyncConcurrency <= 0) maxSyncConcurrency = 1;
+        this.maxSyncConcurrency = maxSyncConcurrency;
     }
 
     public long getSyncInterval() {

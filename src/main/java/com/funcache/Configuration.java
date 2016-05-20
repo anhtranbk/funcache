@@ -44,9 +44,13 @@ public interface Configuration {
 
     void setAllowMultiSyncRunParallel(boolean allowMultiSyncRunParallel);
 
-    int getNumberTryWhenSyncFailed();
+    int getMaxRetrySyncIfFailed();
 
-    void setNumberTryWhenSyncFailed(int numberTryWhenSyncFailed);
+    void setMaxRetrySyncIfFailed(int maxRetrySyncIfFailed);
+
+    int getMaxSyncConcurrency();
+
+    void setMaxSyncConcurrency(int maxSyncConcurrency);
 
     long getSyncInterval();
 
