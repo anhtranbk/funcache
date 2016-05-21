@@ -53,7 +53,11 @@ public class SaveToPersistentWorkerTest extends TestCase {
         funCache.getConfiguration().setCancelSyncIfNotLargerMin(false);
 
         SaveToPersistentWorker<String, String> saveToPersistentWorker = new SaveToPersistentWorker<>(funCache);
-        saveToPersistentWorker.run();
+        funCache.numSyncWorkersRunning.incrementAndGet();
+        funCache.submitTask(saveToPersistentWorker);
+        while (funCache.numSyncWorkersRunning.get() > 0) {
+            Thread.sleep(100);
+        }
 
         assertTrue(funCache.getCacheStorage().get("1").isSynced());
         assertTrue(funCache.getCacheStorage().get("3").isSynced());
@@ -77,7 +81,11 @@ public class SaveToPersistentWorkerTest extends TestCase {
         funCache.getConfiguration().setCancelSyncIfNotLargerMin(true);
 
         SaveToPersistentWorker<String, String> saveToPersistentWorker = new SaveToPersistentWorker<>(funCache);
-        saveToPersistentWorker.run();
+        funCache.numSyncWorkersRunning.incrementAndGet();
+        funCache.submitTask(saveToPersistentWorker);
+        while (funCache.numSyncWorkersRunning.get() > 0) {
+            Thread.sleep(100);
+        }
 
         assertTrue(funCache.getCacheStorage().get("1").isSynced());
         assertTrue(funCache.getCacheStorage().get("3").isSynced());

@@ -48,8 +48,8 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
     private final Timer cleanTimer = new Timer();
     private final Timer saveToPersistentTimer = new Timer();
 
-    private final AtomicInteger numUnsyncedItems = new AtomicInteger(0);
-    private final AtomicInteger numSyncWorkersRunning = new AtomicInteger(0);
+    final AtomicInteger numUnsyncedItems = new AtomicInteger(0);
+    final AtomicInteger numSyncWorkersRunning = new AtomicInteger(0);
 
 
     public FunCacheImpl(Configuration config) {
