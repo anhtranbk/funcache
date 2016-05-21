@@ -250,7 +250,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         if (numSyncWorkersRunning.get() < config.getMaxSyncConcurrency()) {
             numSyncWorkersRunning.incrementAndGet();
             executor.submit(new SaveToPersistentWorker<>(this));
-            LOGGER.info("Start new sync worker, current sync running: " + numSyncWorkersRunning.get());
+            LOGGER.info("[SYNC] Start new sync worker, current sync running: " + numSyncWorkersRunning.get());
         }
     }
 
@@ -338,7 +338,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                 dw = next;
                 count++;
             }
-            LOGGER.info("[CLEAN] Size: " + funCache.size() + ", cleaned: " + count);
+            LOGGER.info("[CLEAN] Cleaned: " + count + ", current size: " + funCache.size());
         }
     }
 
@@ -361,9 +361,9 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                 return;
             }
 
-            Observable.fromCallable(new Callable<Boolean>() {
+            Observable.fromCallable(new Callable<Long>() {
                 @Override
-                public Boolean call() throws Exception {
+                public Long call() throws Exception {
                     final List<V> values = new ArrayList<>(forSyncs.size());
                     for (DataWrapperImpl<K, V> dw : forSyncs) {
                         values.add(dw.getValue());
@@ -372,13 +372,14 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                     final int maxTry = config.getMaxTryWhenSyncFailed();
                     int i = 0;
                     while (maxTry < 0 || i++ < config.getMaxTryWhenSyncFailed()) {
-                        if (funCache.getPersistentStorage().saveAll((List<Object>) values)) return true;
+                        final long now = System.currentTimeMillis();
+                        if (funCache.getPersistentStorage().saveAll((List<Object>) values)) return now;
                     }
                     throw OnErrorThrowable.from(new RuntimeException());
                 }
-            }).observeOn(Schedulers.io()).subscribeOn(Schedulers.computation()).subscribe(new Action1<Boolean>() {
+            }).observeOn(Schedulers.io()).subscribeOn(Schedulers.computation()).subscribe(new Action1<Long>() {
                 @Override
-                public void call(final Boolean success) {
+                public void call(final Long startTime) {
                     funCache.submitTask(new Runnable() {
                         @Override
                         public void run() {
@@ -389,8 +390,11 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                                 }
                             }
                             funCache.numSyncWorkersRunning.decrementAndGet();
-                            LOGGER.info("[SYNC] Synced: " + forSyncs.size() + ", current unsynced: "
-                                    + funCache.getNumberUnsyncedItems());
+
+                            final float timeExecuted = (float) (System.currentTimeMillis() - startTime) / 1000;
+                            LOGGER.info("[SYNC] Synced: " + forSyncs.size()
+                                    + ", current unsynced: " + funCache.getNumberUnsyncedItems()
+                                    + ", time executed: " + timeExecuted + " second");
                         }
                     });
                 }
@@ -407,6 +411,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                             funCache.numSyncWorkersRunning.decrementAndGet();
                         }
                     });
+                    LOGGER.error("[SYNC] Sync error", throwable);
                 }
             });
         }

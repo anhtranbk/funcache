@@ -109,6 +109,6 @@ class DataWrapperImpl<K, V> implements DataWrapper<K, V>, FastLinkedListItem, Se
 
     @Override
     public String toString() {
-        return key.toString() + "," + String.valueOf(syncState);
+        return key.toString() + ":" + String.valueOf(syncState);
     }
 }
