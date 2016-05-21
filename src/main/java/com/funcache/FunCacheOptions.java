@@ -20,7 +20,6 @@ public class FunCacheOptions implements Configuration {
     public static final String KEY_MAX_UNSYNCED_ITEMS = "funcache.maxUnsyncedItems";
     public static final String KEY_MIN_ITEMS_TO_SYNC = "funcache.minItemsToSync";
     public static final String KEY_CANCEL_SYNC_IF_NOT_LARGER_MIN = "funcache.cancelSyncIfNotLargerMin";
-    public static final String KEY_ALLOW_MULTI_SYNC = "funcache.allowMultiSync";
     public static final String KEY_MAX_TRY_WHEN_SYNC_FAILED = "funcache.maxTryWhenSyncFailed";
     public static final String KEY_MAX_SYNC_CONCURRENCY = "funcache.maxSyncConcurrency";
     public static final String KEY_SYNC_INTERVAL = "funcache.syncInterval";
@@ -35,7 +34,6 @@ public class FunCacheOptions implements Configuration {
     public static final int DEFAULT_MIN_ITEMS_TO_SYNC = 500;
     public static final boolean DEFAULT_CANCEL_SYNC_IF_NOT_LARGER_MIN = true;
     public static final long DEFAULT_SYNC_INTERVAL = TimeUnit.MINUTES.toSeconds(10);
-    public static final boolean DEFAULT_ALLOW_MULTI_SYNC = false;
     public static final int DEFAULT_MAX_TRY_WHEN_SYNC_FAILED = 5;
     public static final int DEFAULT_MAX_SYNC_CONCURRENCY = 5;
 
@@ -48,7 +46,6 @@ public class FunCacheOptions implements Configuration {
     private volatile int maxUnsyncedItems = DEFAULT_MAX_UNSYNCED_ITEMS;
     private volatile int minItemsToSync = DEFAULT_MIN_ITEMS_TO_SYNC;
     private volatile boolean cancelSyncIfNotLargerMin = DEFAULT_CANCEL_SYNC_IF_NOT_LARGER_MIN;
-    private volatile boolean allowMultiSync = DEFAULT_ALLOW_MULTI_SYNC;
     private volatile int maxTryWhenSyncFailed = DEFAULT_MAX_TRY_WHEN_SYNC_FAILED;
     private volatile int maxSyncConcurrency = DEFAULT_MAX_SYNC_CONCURRENCY;
     private volatile long syncInterval = DEFAULT_SYNC_INTERVAL;
@@ -111,16 +108,6 @@ public class FunCacheOptions implements Configuration {
 
     public void setCancelSyncIfNotLargerMin(boolean cancelSyncIfNotLargerMin) {
         this.cancelSyncIfNotLargerMin = cancelSyncIfNotLargerMin;
-    }
-
-    @Override
-    public boolean isAllowMultiSync() {
-        return allowMultiSync;
-    }
-
-    @Override
-    public void setAllowMultiSync(boolean allowMultiSync) {
-        this.allowMultiSync = allowMultiSync;
     }
 
     @Override

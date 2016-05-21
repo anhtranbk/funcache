@@ -70,7 +70,6 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         LOGGER.info("maxUnsyncedItems=" + config.getMaxUnsyncedItems());
         LOGGER.info("minItemsToSync=" + config.getMinItemsToSync());
         LOGGER.info("cancelSyncIfNotLargerMin=" + config.isCancelSyncIfNotLargerMin());
-        LOGGER.info("allowMultiSync=" + config.isAllowMultiSync());
         LOGGER.info("maxTryWhenSyncFailed=" + config.getMaxTryWhenSyncFailed());
         LOGGER.info("maxSyncConcurrency=" + config.getMaxSyncConcurrency());
         LOGGER.info("syncInterval=" + config.getSyncInterval());
@@ -248,8 +247,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
     }
 
     void startSyncToPersistentWorker() {
-        if ((numSyncWorkersRunning.get() < config.getMaxSyncConcurrency() && config.isAllowMultiSync())
-                || numSyncWorkersRunning.get() == 0) {
+        if (numSyncWorkersRunning.get() < config.getMaxSyncConcurrency()) {
             numSyncWorkersRunning.incrementAndGet();
             executor.submit(new SaveToPersistentWorker<>(this));
             LOGGER.info("Start new sync worker, current sync running: " + numSyncWorkersRunning.get());
@@ -370,7 +368,10 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                     for (DataWrapperImpl<K, V> dw : forSyncs) {
                         values.add(dw.getValue());
                     }
-                    for (int i = 0; i < config.getMaxTryWhenSyncFailed(); i++) {
+
+                    final int maxTry = config.getMaxTryWhenSyncFailed();
+                    int i = 0;
+                    while (maxTry < 0 || i++ < config.getMaxTryWhenSyncFailed()) {
                         if (funCache.getPersistentStorage().saveAll((List<Object>) values)) return true;
                     }
                     throw OnErrorThrowable.from(new RuntimeException());
