@@ -1,7 +1,7 @@
 package com.funcache.internal;
 
 import com.funcache.Configuration;
-import com.funcache.FunCacheBuilder;
+import com.funcache.FunCache;
 import com.funcache.FunCacheOptions;
 import com.funcache.exception.LimitExceededException;
 import com.funcache.impl.StorageFactory;
@@ -37,7 +37,7 @@ public class FunCacheImplTest extends TestCase {
         config.setTimeBetweenEvictionRunsMillis(15000);
         config.setStorageFactory(new StorageFactory());
 
-        funCache = (FunCacheImpl<String, String>) new FunCacheBuilder<String, String>()
+        funCache = (FunCacheImpl<String, String>) new FunCache.Builder<String, String>()
                 .setConfiguration(config)
                 .build();
 

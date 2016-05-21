@@ -1,7 +1,7 @@
 package com.funcache.internal;
 
 import com.funcache.Configuration;
-import com.funcache.FunCacheBuilder;
+import com.funcache.FunCache;
 import com.funcache.FunCacheOptions;
 import com.funcache.impl.StorageFactory;
 import com.funcache.storage.CacheStorage;
@@ -35,7 +35,7 @@ public class CleanIdleItemsWorkerTest extends TestCase {
             testData.put(String.valueOf(i), String.valueOf(i * 10));
         }
 
-        funCache = (FunCacheImpl<String, String>) new FunCacheBuilder<String, String>()
+        funCache = (FunCacheImpl<String, String>) new FunCache.Builder<String, String>()
                 .setConfiguration(config)
                 .build();
         funCache.init(testData);
