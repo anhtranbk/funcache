@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="https://github.com/tjeubaoit">tjeubaoit</a>
  */
+@SuppressWarnings("unchecked")
 class DataWrapperImpl<K, V> implements DataWrapper<K, V>, FastLinkedListItem, Serializable {
 
     static final int STATE_SYNCED = 0;
@@ -52,7 +53,6 @@ class DataWrapperImpl<K, V> implements DataWrapper<K, V>, FastLinkedListItem, Se
         return next;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void setNext(FastLinkedListItem next) {
         this.next = (DataWrapperImpl<K, V>) next;
@@ -94,13 +94,6 @@ class DataWrapperImpl<K, V> implements DataWrapper<K, V>, FastLinkedListItem, Se
         return syncState.compareAndSet(expected, update);
     }
 
-    void setSyncState(int state) {
-        if (state < STATE_SYNCED && state > STATE_SYNCING)
-            throw new IllegalArgumentException();
-        this.syncState.set(state);
-    }
-
-    @SuppressWarnings("unchecked")
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof DataWrapperImpl) {

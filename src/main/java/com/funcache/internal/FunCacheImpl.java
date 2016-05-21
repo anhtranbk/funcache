@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="https://github.com/tjeubaoit">tjeubaoit</a>
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings(value = {"unchecked", "unused"})
 public class FunCacheImpl<K, V> implements FunCache<K, V> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FunCacheImpl.class);
@@ -354,7 +354,6 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
             this.config = funCache.getConfiguration();
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public void run() {
             final List<DataWrapperImpl<K, V>> forSyncs = getListUnsynedItems();
