@@ -397,11 +397,16 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
             }, new Action1<Throwable>() {
                 @Override
                 public void call(Throwable throwable) {
-                    for (DataWrapperImpl<K, V> dw : forSyncs) {
-                        dw.compareAndSetSyncState(DataWrapperImpl.STATE_SYNCING,
-                                DataWrapperImpl.STATE_UNSYNCED);
-                    }
-                    funCache.numSyncWorkersRunning.decrementAndGet();
+                    funCache.submitTask(new Runnable() {
+                        @Override
+                        public void run() {
+                            for (DataWrapperImpl<K, V> dw : forSyncs) {
+                                dw.compareAndSetSyncState(DataWrapperImpl.STATE_SYNCING,
+                                        DataWrapperImpl.STATE_UNSYNCED);
+                            }
+                            funCache.numSyncWorkersRunning.decrementAndGet();
+                        }
+                    });
                 }
             });
         }
