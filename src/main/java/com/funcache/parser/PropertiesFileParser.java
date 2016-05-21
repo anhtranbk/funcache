@@ -62,8 +62,8 @@ public class PropertiesFileParser implements ConfigurationParser {
             if ((tmp = properties.getProperty(FunCacheOptions.KEY_ALLOW_MULTI_SYNC)) != null) {
                 config.setAllowMultiSync(Boolean.parseBoolean(tmp));
             }
-            if ((tmp = properties.getProperty(FunCacheOptions.KEY_MAX_RETRY_SYNC_IF_FAILED)) != null) {
-                config.setMaxRetrySyncIfFailed(Integer.parseInt(tmp));
+            if ((tmp = properties.getProperty(FunCacheOptions.KEY_MAX_TRY_WHEN_SYNC_FAILED)) != null) {
+                config.setMaxTryWhenSyncFailed(Integer.parseInt(tmp));
             }
             if ((tmp = properties.getProperty(FunCacheOptions.KEY_MAX_SYNC_CONCURRENCY)) != null) {
                 config.setMaxSyncConcurrency(Integer.parseInt(tmp));

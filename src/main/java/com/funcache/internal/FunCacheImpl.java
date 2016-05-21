@@ -71,7 +71,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         LOGGER.info("minItemsToSync=" + config.getMinItemsToSync());
         LOGGER.info("cancelSyncIfNotLargerMin=" + config.isCancelSyncIfNotLargerMin());
         LOGGER.info("allowMultiSync=" + config.isAllowMultiSync());
-        LOGGER.info("maxRetrySyncIfFailed=" + config.getMaxRetrySyncIfFailed());
+        LOGGER.info("maxTryWhenSyncFailed=" + config.getMaxTryWhenSyncFailed());
         LOGGER.info("maxSyncConcurrency=" + config.getMaxSyncConcurrency());
         LOGGER.info("syncInterval=" + config.getSyncInterval());
         LOGGER.info("putWhenExceededMaxSizeBehavior=" + config.getPutWhenExceededMaxSizeBehavior());
@@ -371,7 +371,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                     for (DataWrapperImpl<K, V> dw : forSyncs) {
                         values.add(dw.getValue());
                     }
-                    for (int i = 0; i < config.getMaxRetrySyncIfFailed(); i++) {
+                    for (int i = 0; i < config.getMaxTryWhenSyncFailed(); i++) {
                         if (funCache.getPersistentStorage().saveAll((List<Object>) values)) return true;
                     }
                     throw OnErrorThrowable.from(new RuntimeException());

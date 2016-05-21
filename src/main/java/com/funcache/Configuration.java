@@ -44,9 +44,9 @@ public interface Configuration {
 
     void setAllowMultiSync(boolean allowMultiSync);
 
-    int getMaxRetrySyncIfFailed();
+    int getMaxTryWhenSyncFailed();
 
-    void setMaxRetrySyncIfFailed(int maxRetrySyncIfFailed);
+    void setMaxTryWhenSyncFailed(int maxTryWhenSyncFailed);
 
     int getMaxSyncConcurrency();
 
