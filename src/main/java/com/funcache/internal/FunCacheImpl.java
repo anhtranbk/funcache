@@ -355,15 +355,14 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
         @Override
         public void run() {
             final List<DataWrapperImpl<K, V>> forSyncs = getListUnsynedItems();
-            if (config.isCancelSyncIfNotLargerMin() && forSyncs.size() < config.getMinItemsToSync()) {
-                LOGGER.info("[SYNC] Not enough items to sync, actual: " + forSyncs.size());
-                funCache.numSyncWorkersRunning.decrementAndGet();
-                return;
-            }
-
             Observable.fromCallable(new Callable<Long>() {
                 @Override
                 public Long call() throws Exception {
+                    if (config.isCancelSyncIfNotLargerMin() && forSyncs.size() < config.getMinItemsToSync()) {
+                        LOGGER.info("[SYNC] Not enough items to sync, actual: " + forSyncs.size());
+                        throw OnErrorThrowable.from(new IllegalArgumentException());
+                    }
+
                     final List<V> values = new ArrayList<>(forSyncs.size());
                     for (DataWrapperImpl<K, V> dw : forSyncs) {
                         values.add(dw.getValue());
@@ -375,6 +374,7 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                         final long now = System.currentTimeMillis();
                         if (funCache.getPersistentStorage().saveAll((List<Object>) values)) return now;
                     }
+
                     throw OnErrorThrowable.from(new RuntimeException());
                 }
             }).observeOn(Schedulers.io()).subscribeOn(Schedulers.computation()).subscribe(new Action1<Long>() {
@@ -411,7 +411,9 @@ public class FunCacheImpl<K, V> implements FunCache<K, V> {
                             funCache.numSyncWorkersRunning.decrementAndGet();
                         }
                     });
-                    LOGGER.error("[SYNC] Sync error", throwable);
+
+                    if (!(throwable.getCause() instanceof IllegalArgumentException))
+                        LOGGER.error("[SYNC] Sync error", throwable.getCause());
                 }
             });
         }
